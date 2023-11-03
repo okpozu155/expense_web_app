@@ -54,7 +54,6 @@ coll = db["my_coll"]
 
 
 
-
 def get_all_periods():
     items = db.my_coll.find()  # Find all documents in the collection
     periods = [item["_id"] for item in items]  # Assuming "_id" is the period identifier
@@ -97,54 +96,47 @@ if selected == "Data Entry":
             st.success("Data Saved")
 
 
-
 if selected == "Data Visualization":
     st.header("Data Visualization")
-    with st.form("saved periods", clear_on_submit=True):
-        col1 = st.selectbox("Select Month", months, key="month")
-        col2 = st.selectbox('Select Year', year, key="year")
-        periods = f"{col2}_{col1}"
+    col1 = st.selectbox("Select Month", months, key="month")
+    col2 = st.selectbox('Select Year', year, key="year")
+    periods = f"{col2}_{col1}"
 
-        if not periods:
-            st.warning("No saved periods found.")
-        else:
-            # Get data for the selected period
-            period_data = db.my_coll.find_one({"period": periods}, {'_id': 0})
+    if not periods:
+        st.warning("No saved periods found.")
+    else:
+        # Get data for the selected period
+        period_data = db.my_coll.find_one({"period": periods}, {'_id': 0})
 
-            if period_data:
-                comment = period_data.get("comment")
-                expenses = period_data.get("expenses")
-                incomes = period_data.get("incomes")
-                
+        if period_data:
+            comment = period_data.get("comment")
+            expenses = period_data.get("expenses")
+            incomes = period_data.get("incomes")
+
             # Create metrics
-                submitted = st.form_submit_button("Plot Period")
-                if submitted:
+            total_income = sum(incomes.values())
+            total_expenses = sum(expenses.values())
+            remaining_budget = total_income - total_expenses
+            col1, col2, col3 = st.columns(3)
+            col1.metric("Total Income", f"{total_income} {currency}")
+            col2.metric("Total Expenses", f"{total_expenses} {currency}")
+            col3.metric("Remaining Budget", f"{remaining_budget} {currency}")
+            st.text(f"Comment: {comment}")
 
-                    total_income = sum(incomes.values())
-                    total_expenses = sum(expenses.values())
-                    remaining_budget = total_income - total_expenses
-                    col1, col2, col3 = st.columns(3)
-                    col1.metric("Total Income", f"{total_income} {currency}")
-                    col2.metric("Total Expenses", f"{total_expenses} {currency}")
-                    col3.metric("Remaining Budget", f"{remaining_budget} {currency}")
-                    st.text(f"comment: {comment}")
+            label = list(incomes.keys()) + [total_expenses] + list(expenses.keys())
+            source = list(range(len(incomes))) + [len(incomes)] * len(expenses)
+            target = [len(incomes)] * len(incomes) + [label.index(expense) for expense in expenses]
+            value = list(incomes.values()) + list(expenses.values())
 
-                    label = list(incomes.keys()) + [total_expenses] + list(expenses.keys())
-                    source = list(range(len(incomes))) + [len(incomes)] * len (expenses)
-                    target = [len(incomes)] * len(incomes) + [label.index(expense) for expense in expenses]
-                    value = list(incomes.values()) + list(expenses.values())
+            link = dict(source=source, target=target, value=value)
+            node = dict(label=label, pad=20, thickness=30, color='#98f6d0')
+            data = go.Sankey(link=link, node=node)
 
-                    link = dict(source=source, target=target, value=value)
-                    node = dict(label=label, pad=20, thickness=30, color='#98f6d0')
-                    data= go.Sankey(link=link, node=node)
+            fig = go.Figure(data)
+            fig.update_layout(margin=dict(l=0, r=0, t=5, b=5))
+            st.plotly_chart(fig, use_container_width=True)
+            fig.show()
 
-                    fig = go.Figure(data)
-                    fig.update_layout(margin=dict(l=0,r=0,t=5,b=5))
-                    st.plotly_chart(fig, use_container_width=True)
-                    fig.show()
-                else:
-                    st.warning("Selected period not found in the database.")
-
-
-
+        else:
+            st.warning("Selected period not found in the database.")
 

@@ -1,1 +1,3 @@
 # expense_web_app
+This Python application, created exclusively with the Streamlit library, allows users to input their monthly income sources. It then stores this information in a MongoDB database (a NoSQL database). The data can also be visualized in graphical formats, using a Plotly-generated visualization graph called Sankey graph.
+To use the application, you need to have mongodb compass application running locally in your machine or on your server.
